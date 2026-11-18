@@ -68,6 +68,9 @@
   .i:focus{border-color:var(--brand-2);background-color:#fff;box-shadow:0 0 0 4px rgba(47,95,208,.12)}
   .i.err{border-color:var(--bad);background-color:var(--bad-soft)}
 
+  .bf-toggle{display:flex;gap:8px;align-items:flex-start;margin-top:12px;font-weight:500;cursor:pointer;font-size:15px}
+  .bf-toggle input{width:18px;height:18px;margin-top:3px;accent-color:var(--brand)}
+  .bf-toggle small{font-weight:400;color:var(--muted);display:block}
   .me-box{display:flex;gap:14px;align-items:center;background:var(--brand-soft);border-radius:14px;padding:14px 16px}
   .avatar{width:44px;height:44px;border-radius:99px;background:var(--brand);color:#fff;display:grid;place-items:center;font-weight:700;flex:none}
   .me-box b{display:block}
@@ -308,7 +311,13 @@
     <form id="bookForm" novalidate autocomplete="off">
       <div class="card">
         <h2 class="sec-title"><span class="dot">1</span>ผู้ขออนุญาต</h2>
-        <div class="me-box"><div class="avatar" id="meAv"></div><div><b id="meName"></b><small id="meInfo"></small></div></div>
+        <div class="me-box" id="meBox"><div class="avatar" id="meAv"></div><div><b id="meName"></b><small id="meInfo"></small></div></div>
+        <label class="bf-toggle" id="bfWrap" hidden><input type="checkbox" id="bfToggle"> กรอกใบจองย้อนหลัง <small>(เฉพาะแอดมิน · เลือกวันที่ผ่านมาแล้วได้ ช่องอื่นไม่บังคับ และไม่แจ้งเตือน LINE)</small></label>
+        <div class="grid" id="bfFields" hidden style="margin-top:12px">
+          <label class="f full"><span>ชื่อผู้ขออนุญาต <small>(ไม่บังคับ)</small></span><input class="i" name="reqName"></label>
+          <label class="f"><span>ตำแหน่ง <small>(ไม่บังคับ)</small></span><input class="i" name="reqPosition"></label>
+          <label class="f"><span>ฝ่าย/กลุ่ม <small>(ไม่บังคับ)</small></span><input class="i" name="reqDept"></label>
+        </div>
       </div>
 
       <div class="card">
@@ -655,6 +664,7 @@ function renderBookForm(){
   $('#meAv').textContent = (D.me.name.replace(/^(นาย|นางสาว|นาง|น\.ส\.)\s*/,'')[0] || '?');
   $('#meName').textContent = D.me.name;
   $('#meInfo').textContent = D.me.position + ' · ' + D.me.dept;
+  $('#bfWrap').hidden = !isAdmin(); if (!isAdmin()) $('#bfToggle').checked = false;
 
   const sel = (form.querySelector('input[name=vehicle]:checked') || {}).value;
   const cars = D.vehicles.filter(v => v.active);
@@ -677,6 +687,7 @@ function renderBookForm(){
   dv.innerHTML = drivers.length ? '<option value="">— เลือกพนักงานขับรถ —</option>' + drivers.map(n => `<option>${esc(n)}</option>`).join('')
                                 : '<option value="">ยังไม่มีพนักงานขับรถในระบบ (ติดต่อผู้ดูแลระบบ)</option>';
   if (drivers.includes(keepD)) dv.value = keepD; else if (drivers.length === 1) dv.value = drivers[0];
+  applyBackfill();
 }
 const ICON_CAR = '<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 16V8a2 2 0 0 1 2-2h11l5 5v5a1 1 0 0 1-1 1h-1"/><path d="M2 16a1 1 0 0 0 1 1h1"/><path d="M15 6v5h5"/><path d="M2 11h13"/><circle cx="7" cy="17" r="2"/><circle cx="16" cy="17" r="2"/><path d="M9 17h5"/></svg>';
 const ICON_MOTO = '<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="5" cy="17" r="3"/><circle cx="19" cy="17" r="3"/><path d="M5 17l4-7h5l3 7"/><path d="M14 10l-1-4h3"/><path d="M9 10L7 7H5"/></svg>';
@@ -692,7 +703,17 @@ form.departDate.addEventListener('change', () => {
 ['departTime','returnDate','returnTime'].forEach(n => form[n].addEventListener('change', liveCheck));
 form.addEventListener('input', e => e.target.classList.remove('err'));
 
-const FIELDS = ['place','purpose','project','people','departDate','departTime','returnDate','returnTime','note','ctrlId','headId','apprId','driverName'];
+const FIELDS = ['place','purpose','project','people','departDate','departTime','returnDate','returnTime','note','ctrlId','headId','apprId','driverName','reqName','reqPosition','reqDept'];
+const isBackfill = () => isAdmin() && $('#bfToggle').checked;
+function applyBackfill(){
+  const on = isBackfill();
+  $('#bfFields').hidden = !on; $('#meBox').hidden = on;
+  form.departDate.min = on ? '' : isoToday(); form.returnDate.min = on ? '' : (form.departDate.value || '');
+  $$('#bookForm label.f > span em').forEach(em => { const n = em.closest('label').querySelector('[name]')?.name;
+    em.hidden = on && !['departDate','departTime','returnDate','returnTime'].includes(n); });
+  const first = $('#selDriver').options[0]; if (first && first.value === '' && D.drivers && D.drivers.length) first.textContent = on ? '— ไม่ระบุ —' : '— เลือกพนักงานขับรถ —';
+}
+$('#bfToggle').addEventListener('change', applyBackfill);
 function formData(){
   const o = {}; FIELDS.forEach(k => o[k] = form[k].value.trim());
   o.vehicle = (form.querySelector('input[name=vehicle]:checked') || {}).value || '';
@@ -712,13 +733,13 @@ function liveCheck(){
 }
 form.addEventListener('submit', async e => {
   e.preventDefault();
-  const d = formData();
-  const need = ['place','purpose','people','departDate','departTime','returnDate','returnTime'];
+  const d = formData(), bf = isBackfill(); if (bf) d.backfill = true;
+  const need = bf ? ['departDate','departTime','returnDate','returnTime'] : ['place','purpose','people','departDate','departTime','returnDate','returnTime'];
   const miss = need.filter(k => !d[k]); miss.forEach(k => form[k].classList.add('err'));
   if (!d.vehicle) { showAlert('#formErr','กรุณาเลือกรถที่ใช้'); return; }
-  if (!d.driverName) { form.driverName.classList.add('err'); showAlert('#formErr','กรุณาเลือกพนักงานขับรถ'); form.driverName.focus(); return; }
+  if (!bf && !d.driverName) { form.driverName.classList.add('err'); showAlert('#formErr','กรุณาเลือกพนักงานขับรถ'); form.driverName.focus(); return; }
   if (miss.length) { showAlert('#formErr','กรุณากรอกช่องที่มีเครื่องหมาย * ให้ครบ'); form[miss[0]].focus(); return; }
-  if (!(parseInt(d.people,10) > 0)) { form.people.classList.add('err'); showAlert('#formErr','จำนวนคนต้องมากกว่า 0'); return; }
+  if (!(bf && d.people === '') && !(parseInt(d.people,10) > 0)) { form.people.classList.add('err'); showAlert('#formErr','จำนวนคนต้องมากกว่า 0'); return; }
   if ((d.returnDate+'T'+d.returnTime) <= (d.departDate+'T'+d.departTime)) { showAlert('#formErr','วันเวลากลับต้องหลังวันเวลาออกเดินทาง'); return; }
   const c = findClash(d); if (c) { showAlert('#formErr', clashMsg(c)); return; }
   showAlert('#formErr','');
@@ -732,6 +753,7 @@ form.addEventListener('submit', async e => {
     openModal('#mDone');
     const keep = { ctrlId:d.ctrlId, headId:d.headId, apprId:d.apprId, driverName:d.driverName };
     form.reset(); Object.entries(keep).forEach(([k,v]) => form[k].value = v);
+    $('#bfToggle').checked = bf; applyBackfill();
   }catch(err){ showAlert('#formErr', err.message || 'เชื่อมต่อระบบไม่สำเร็จ กรุณาลองใหม่'); }
   finally{ busy(btn, false, 'ยืนยันการจองรถ'); }
 });
@@ -751,6 +773,7 @@ function itemHTML(b, mode){
   const cancelled = isCancelled(b);
   let chips = `<span class="chip car">${esc(c.type)} ${esc(c.plate)}</span><span class="chip">${esc(b.people)} คน</span>`;
   if (b.driverName) chips += `<span class="chip">ผู้ขับ ${esc(b.driverName)}</span>`;
+  if (!b.people) chips = chips.replace('<span class="chip"> คน</span>','');
   if (b.mine) chips += '<span class="chip mine">ของฉัน</span>';
   if (cancelled) chips += `<span class="chip bad">ยกเลิกแล้ว${b.cancelledBy ? ' โดย '+esc(b.cancelledBy) : ''}</span>`;
   else if (hasKm(b)) chips += `<span class="chip ok">ระยะทาง ${Number(b.kmTotal).toLocaleString('th-TH')} กม.</span>`;
@@ -764,7 +787,7 @@ function itemHTML(b, mode){
   }
   return `<div class="item${cancelled?' cancelled':''}">
     <div class="datebox"><b>${d}</b><small>${MS[m-1]} ${String(y+543).slice(2)}</small></div>
-    <div><div class="t">${esc(b.place)}</div><div class="m">${esc(b.name)} · ${range}</div><div class="chips">${chips}</div></div>
+    <div><div class="t">${esc(b.place || '(ไม่ระบุสถานที่)')}</div><div class="m">${esc(b.name || '-')} · ${range}</div><div class="chips">${chips}</div></div>
     <div class="act">${act}</div></div>`;
 }
 let viewMode = 'cal';
