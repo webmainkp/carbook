@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>ระบบจองรถ · สำนักงานยุติธรรมจังหวัดชลบุรี</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&family=Sarabun:wght@400&display=swap" rel="stylesheet">
+<link rel="preload" href="form.png" as="image">
+<style>
+  :root{
+    --ink:#14213d; --muted:#66708a; --line:#e3e7f0; --bg:#f4f6fb; --card:#fff;
+    --brand:#1d3f8f; --brand-2:#2f5fd0; --brand-soft:#e9effd;
+    --ok:#127a4b; --ok-soft:#e5f5ec; --warn:#a15c00; --warn-soft:#fff3df; --bad:#b42318; --bad-soft:#fdecea;
+    --r:16px; --shadow:0 1px 2px rgba(20,33,61,.06),0 8px 24px rgba(20,33,61,.06);
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{font-family:"IBM Plex Sans Thai",system-ui,-apple-system,"Segoe UI",sans-serif;color:var(--ink);background:var(--bg);font-size:16px;line-height:1.55;-webkit-font-smoothing:antialiased}
+  button,input,textarea,select{font:inherit;color:inherit}
+
+  /* ---------- header ---------- */
+  header{background:linear-gradient(135deg,#132c66 0%,#1d3f8f 55%,#2f5fd0 100%);color:#fff;padding:22px 20px 64px}
+  .head-in{max-width:880px;margin:0 auto;display:flex;align-items:center;gap:14px}
+  .logo{width:46px;height:46px;border-radius:14px;background:rgba(255,255,255,.14);display:grid;place-items:center;flex:none}
+  header h1{margin:0;font-size:21px;font-weight:700;letter-spacing:.2px}
+  header p{margin:0;opacity:.82;font-size:14px}
+
+  main{max-width:880px;margin:-44px auto 0;padding:0 16px 48px}
+
+  /* ---------- tabs ---------- */
+  .tabs{display:flex;gap:6px;background:var(--card);padding:6px;border-radius:14px;box-shadow:var(--shadow);margin-bottom:16px}
+  .tab{flex:1;border:0;background:transparent;padding:10px 8px;border-radius:10px;cursor:pointer;font-weight:500;color:var(--muted);display:flex;align-items:center;justify-content:center;gap:6px;white-space:nowrap}
+  .tab.on{background:var(--brand-soft);color:var(--brand);font-weight:600}
+  .tab .n{background:var(--bad);color:#fff;border-radius:99px;font-size:12px;padding:0 7px;line-height:20px}
+  .tab .n:empty{display:none}
+
+  .card{background:var(--card);border-radius:var(--r);box-shadow:var(--shadow);padding:22px}
+  .card + .card{margin-top:16px}
+  .sec-title{font-size:15px;font-weight:600;margin:0 0 14px;display:flex;align-items:center;gap:8px;color:var(--brand)}
+  .sec-title .dot{width:24px;height:24px;border-radius:8px;background:var(--brand-soft);display:grid;place-items:center;font-size:13px}
+
+  /* ---------- form ---------- */
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  .full{grid-column:1/-1}
+  label.f{display:block}
+  label.f > span{display:block;font-size:14px;font-weight:500;margin-bottom:6px}
+  label.f > span em{font-style:normal;color:var(--bad)}
+  label.f > span small{font-weight:400;color:var(--muted)}
+  label.f,.when .box{min-width:0}
+  input.i[type=date],input.i[type=time]{-webkit-appearance:none;appearance:none;display:block;text-align:left}
+  input.i,textarea.i{width:100%;min-width:0;border:1.5px solid var(--line);background:#fbfcfe;border-radius:12px;padding:11px 13px;outline:none;transition:.15s;min-height:46px}
+  textarea.i{resize:vertical;min-height:46px}
+  input.i:focus,textarea.i:focus{border-color:var(--brand-2);background:#fff;box-shadow:0 0 0 4px rgba(47,95,208,.12)}
+  input.i.err{border-color:var(--bad);background:var(--bad-soft)}
+
+  .cars{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .car{position:relative;border:1.5px solid var(--line);border-radius:14px;padding:16px;cursor:pointer;display:flex;gap:14px;align-items:center;background:#fbfcfe;transition:.15s}
+  .car input{position:absolute;opacity:0;pointer-events:none}
+  .car .ic{width:52px;height:52px;border-radius:14px;background:var(--brand-soft);display:grid;place-items:center;color:var(--brand);flex:none}
+  .car b{display:block;font-size:16px}
+  .car small{color:var(--muted);font-size:13px}
+  .car:has(input:checked){border-color:var(--brand-2);background:#f3f6ff;box-shadow:0 0 0 4px rgba(47,95,208,.12)}
+  .car:has(input:checked) .ic{background:var(--brand);color:#fff}
+  .car .tick{position:absolute;top:10px;right:10px;width:22px;height:22px;border-radius:99px;border:1.5px solid var(--line);background:#fff}
+  .car:has(input:checked) .tick{background:var(--brand-2);border-color:var(--brand-2)}
+  .car:has(input:checked) .tick::after{content:"";position:absolute;left:7px;top:3px;width:5px;height:10px;border:solid #fff;border-width:0 2px 2px 0;transform:rotate(45deg)}
+
+  .when{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  .when .box{border:1px dashed var(--line);border-radius:14px;padding:14px;background:#fcfdff}
+  .when .box h4{margin:0 0 10px;font-size:14px;font-weight:600}
+  .when .row{display:grid;grid-template-columns:1.4fr 1fr;gap:10px}
+
+  .alert{border-radius:12px;padding:12px 14px;font-size:14px;display:flex;gap:10px;align-items:flex-start;margin-top:14px}
+  .alert.bad{background:var(--bad-soft);color:var(--bad)}
+  .alert.ok{background:var(--ok-soft);color:var(--ok)}
+  .alert[hidden]{display:none}
+
+  .actions{display:flex;justify-content:flex-end;gap:10px;margin-top:20px}
+  .btn{border:0;border-radius:12px;padding:12px 20px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:8px;justify-content:center;transition:.15s;min-height:46px}
+  .btn.pri{background:var(--brand);color:#fff}
+  .btn.pri:hover{background:#163377}
+  .btn.pri:disabled{background:#9aa8c9;cursor:not-allowed}
+  .btn.ghost{background:var(--brand-soft);color:var(--brand)}
+  .btn.sm{padding:8px 14px;min-height:38px;font-size:14px;border-radius:10px}
+  .spin{width:18px;height:18px;border:2.5px solid rgba(255,255,255,.4);border-top-color:#fff;border-radius:50%;animation:sp .7s linear infinite}
+  @keyframes sp{to{transform:rotate(360deg)}}
+
+  /* ---------- list ---------- */
+  .toolbar{display:flex;gap:10px;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap}
+  .monthnav{display:flex;align-items:center;gap:6px;background:var(--card);border-radius:12px;box-shadow:var(--shadow);padding:4px}
+  .monthnav button{border:0;background:transparent;width:38px;height:38px;border-radius:9px;cursor:pointer;font-size:18px;color:var(--brand)}
+  .monthnav button:hover{background:var(--brand-soft)}
+  .monthnav span{min-width:130px;text-align:center;font-weight:600}
+  .seg{display:flex;background:var(--card);border-radius:12px;box-shadow:var(--shadow);padding:4px;gap:4px}
+  .seg button{border:0;background:transparent;padding:8px 12px;border-radius:9px;cursor:pointer;color:var(--muted);font-size:14px}
+  .seg button.on{background:var(--brand-soft);color:var(--brand);font-weight:600}
+
+  .item{background:var(--card);border-radius:14px;box-shadow:var(--shadow);padding:16px 18px;display:grid;grid-template-columns:64px 1fr auto;gap:14px;align-items:center}
+  .item + .item{margin-top:10px}
+  .datebox{background:var(--brand-soft);color:var(--brand);border-radius:12px;text-align:center;padding:8px 0;line-height:1.15}
+  .datebox b{display:block;font-size:22px}
+  .datebox small{font-size:12px}
+  .item .t{font-weight:600}
+  .item .m{color:var(--muted);font-size:14px}
+  .chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
+  .chip{font-size:12px;border-radius:99px;padding:2px 10px;background:#eef1f7;color:#46506a;font-weight:500}
+  .chip.van{background:#e9effd;color:var(--brand)}
+  .chip.moto{background:#f1ebfd;color:#5b2fb5}
+  .chip.ok{background:var(--ok-soft);color:var(--ok)}
+  .chip.warn{background:var(--warn-soft);color:var(--warn)}
+  .item .act{display:flex;flex-direction:column;gap:6px}
+
+  .empty{text-align:center;color:var(--muted);padding:40px 16px;background:var(--card);border-radius:14px;box-shadow:var(--shadow)}
+  .loading-line{height:3px;background:linear-gradient(90deg,transparent,var(--brand-2),transparent);background-size:200% 100%;animation:ld 1.1s linear infinite;border-radius:3px;margin-bottom:10px}
+  .loading-line[hidden]{display:none}
+  @keyframes ld{from{background-position:200% 0}to{background-position:-200% 0}}
+
+  /* ---------- modal ---------- */
+  .modal{position:fixed;inset:0;background:rgba(15,23,42,.45);display:none;align-items:center;justify-content:center;padding:16px;z-index:50}
+  .modal.on{display:flex}
+  .sheet{background:#fff;border-radius:20px;max-width:460px;width:100%;padding:24px;box-shadow:0 20px 60px rgba(0,0,0,.25)}
+  .sheet h3{margin:0 0 6px;font-size:19px}
+  .sheet .sub{color:var(--muted);font-size:14px;margin-bottom:16px}
+  .okicon{width:56px;height:56px;border-radius:99px;background:var(--ok-soft);color:var(--ok);display:grid;place-items:center;margin-bottom:12px}
+  .total{background:var(--brand-soft);border-radius:12px;padding:12px 14px;display:flex;justify-content:space-between;align-items:center;margin-top:12px}
+  .total b{font-size:20px;color:var(--brand)}
+
+  .toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(120px);background:#14213d;color:#fff;padding:12px 18px;border-radius:12px;font-size:14px;transition:.25s;z-index:60;max-width:90vw}
+  .toast.on{transform:translateX(-50%) translateY(0)}
+
+  .view[hidden]{display:none}
+
+  @media (max-width:640px){
+    .grid,.cars,.when{grid-template-columns:1fr}
+    .tab{font-size:14px;padding:10px 4px}
+    .tab svg{display:none}
+    .item{grid-template-columns:56px 1fr}
+    .item .act{grid-column:1/-1;flex-direction:row}
+    .item .act .btn{flex:1}
+  }
+
+  /* ---------- print: ใบขออนุญาตใช้รถยนต์ ---------- */
+  #print{display:none}
+  @page{size:letter;margin:0}
+  @media print{
+    body{background:#fff}
+    body > *:not(#print){display:none !important}
+    #print{display:block}
+  }
+  .page{position:relative;width:612pt;height:792pt;overflow:hidden;font-family:"Sarabun","Loma",sans-serif;color:#0b2a8f}
+  .page img{position:absolute;inset:0;width:100%;height:100%}
+  .page .v{position:absolute;font-size:11.5pt;line-height:1;white-space:nowrap}
+  .page .v.c{transform:translateX(-50%)}
+  .page .v.sm{font-size:10.5pt}
+  .page .tick{position:absolute;font-size:13pt;line-height:1;font-family:"Segoe UI Symbol","DejaVu Sans",sans-serif}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="head-in">
+    <div class="logo">
+      <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 13l2-6a2 2 0 0 1 1.9-1.4h10.2A2 2 0 0 1 19 7l2 6v4a1 1 0 0 1-1 1h-1"/><path d="M4 18H3v-5h18"/><circle cx="7.5" cy="17.5" r="1.8"/><circle cx="16.5" cy="17.5" r="1.8"/><path d="M9.3 17.5h5.4"/></svg>
+    </div>
+    <div>
+      <h1>ระบบจองรถ</h1>
+      <p>สำนักงานยุติธรรมจังหวัดชลบุรี</p>
+    </div>
+  </div>
+</header>
+
+<main>
+  <nav class="tabs">
+    <button class="tab on" data-view="book">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>จองรถ</button>
+    <button class="tab" data-view="list">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="4" width="18" height="17" rx="3"/><path d="M3 9h18M8 2v4M16 2v4"/></svg>รายการจอง</button>
+    <button class="tab" data-view="driver">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 12l4-3"/><path d="M12 7v1M7 12h1M16 12h1"/></svg>บันทึกเลขไมล์<span class="n" id="pendingN"></span></button>
+  </nav>
+
+  <!-- ================= จองรถ ================= -->
+  <section class="view" id="v-book">
+    <form id="bookForm" novalidate autocomplete="on">
+      <div class="card">
+        <h2 class="sec-title"><span class="dot">1</span>ผู้ขออนุญาต</h2>
+        <div class="grid">
+          <label class="f full"><span>ข้าพเจ้า (ชื่อ-นามสกุล) <em>*</em></span><input class="i" name="name" required autocomplete="name"></label>
+          <label class="f"><span>ตำแหน่ง <em>*</em></span><input class="i" name="position" required></label>
+          <label class="f"><span>ฝ่าย/กลุ่ม <em>*</em></span><input class="i" name="dept" required></label>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2 class="sec-title"><span class="dot">2</span>รถที่ใช้</h2>
+        <div class="cars">
+          <label class="car"><input type="radio" name="vehicle" value="van"><span class="tick"></span>
+            <span class="ic"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 16V8a2 2 0 0 1 2-2h11l5 5v5a1 1 0 0 1-1 1h-1"/><path d="M2 16a1 1 0 0 0 1 1h1"/><path d="M15 6v5h5"/><path d="M2 11h13"/><circle cx="7" cy="17" r="2"/><circle cx="16" cy="17" r="2"/><path d="M9 17h5"/></svg></span>
+            <span><b>รถตู้</b><small>ฮล 7503 กทม.</small></span></label>
+          <label class="car"><input type="radio" name="vehicle" value="moto"><span class="tick"></span>
+            <span class="ic"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="5" cy="17" r="3"/><circle cx="19" cy="17" r="3"/><path d="M5 17l4-7h5l3 7"/><path d="M14 10l-1-4h3"/><path d="M9 10L7 7H5"/></svg></span>
+            <span><b>รถจักรยานยนต์</b><small>จวษ 340 ชลบุรี</small></span></label>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2 class="sec-title"><span class="dot">3</span>รายละเอียดการเดินทาง</h2>
+        <div class="grid">
+          <label class="f full"><span>ขอใช้รถไปราชการที่ (ชื่อสถานที่) <em>*</em></span><input class="i" name="place" required></label>
+          <label class="f full"><span>เพื่อ <em>*</em></span><textarea class="i" name="purpose" rows="2" required></textarea></label>
+          <label class="f"><span>โดยใช้เชื้อเพลิงจากงบประมาณโครงการ <small>(ไม่บังคับ)</small></span><input class="i" name="project"></label>
+          <label class="f"><span>จำนวนคนทั้งหมด <em>*</em></span><input class="i" name="people" type="number" min="1" inputmode="numeric" required></label>
+        </div>
+        <div class="when" style="margin-top:14px">
+          <div class="box"><h4>ออกเดินทาง</h4>
+            <div class="row">
+              <label class="f"><span>วันที่ <em>*</em></span><input class="i" type="date" name="departDate" required></label>
+              <label class="f"><span>เวลา <em>*</em></span><input class="i" type="time" name="departTime" required></label>
+            </div></div>
+          <div class="box"><h4>กลับถึงสำนักงานฯ</h4>
+            <div class="row">
+              <label class="f"><span>วันที่ <em>*</em></span><input class="i" type="date" name="returnDate" required></label>
+              <label class="f"><span>เวลา <em>*</em></span><input class="i" type="time" name="returnTime" required></label>
+            </div></div>
+        </div>
+        <label class="f" style="margin-top:14px"><span>หมายเหตุ <small>(ไม่บังคับ)</small></span><input class="i" name="note"></label>
+
+        <div class="alert bad" id="formErr" hidden></div>
+
+        <div class="actions">
+          <button class="btn pri" type="submit" id="submitBtn">ยืนยันการจองรถ</button>
+        </div>
+      </div>
+    </form>
+  </section>
+
+  <!-- ================= รายการจอง ================= -->
+  <section class="view" id="v-list" hidden>
+    <div class="toolbar">
+      <div class="monthnav"><button id="mPrev" aria-label="เดือนก่อน">‹</button><span id="mLabel"></span><button id="mNext" aria-label="เดือนถัดไป">›</button></div>
+      <div class="seg" id="carFilter"><button class="on" data-v="">ทั้งหมด</button><button data-v="van">รถตู้</button><button data-v="moto">จักรยานยนต์</button></div>
+    </div>
+    <div class="loading-line" id="loadLine"></div>
+    <div id="listBox"></div>
+  </section>
+
+  <!-- ================= บันทึกเลขไมล์ ================= -->
+  <section class="view" id="v-driver" hidden>
+    <div class="card" style="margin-bottom:14px">
+      <h2 class="sec-title" style="margin:0 0 4px">บันทึกของพนักงานขับรถ</h2>
+      <div class="m" style="color:var(--muted);font-size:14px">กรอกเลขกิโลเมตรหลังใช้รถเสร็จ เลือกรายการที่ต้องการบันทึก</div>
+    </div>
+    <div class="loading-line" id="loadLine2"></div>
+    <div id="driverBox"></div>
+  </section>
+</main>
+
+<!-- modal: จองสำเร็จ -->
+<div class="modal" id="mDone">
+  <div class="sheet">
+    <div class="okicon"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"/></svg></div>
+    <h3>จองรถเรียบร้อย</h3>
+    <div class="sub" id="doneText"></div>
+    <div class="actions" style="margin-top:8px">
+      <button class="btn ghost" data-close>ปิด</button>
+      <button class="btn pri" id="donePrint">พิมพ์ใบขออนุญาต</button>
+    </div>
+  </div>
+</div>
+
+<!-- modal: บันทึกเลขไมล์ -->
+<div class="modal" id="mKm">
+  <form class="sheet" id="kmForm" novalidate>
+    <h3>บันทึกเลขกิโลเมตร</h3>
+    <div class="sub" id="kmText"></div>
+    <div class="grid">
+      <label class="f"><span>เลขกิโลเมตรก่อนไป <em>*</em></span><input class="i" name="kmStart" type="number" inputmode="numeric" min="0" step="1" required></label>
+      <label class="f"><span>เลขกิโลเมตรเมื่อกลับ <em>*</em></span><input class="i" name="kmEnd" type="number" inputmode="numeric" min="0" step="1" required></label>
+    </div>
+    <div class="total"><span>รวมระยะทาง</span><b id="kmTotal">– กม.</b></div>
+    <div class="alert bad" id="kmErr" hidden></div>
+    <div class="actions">
+      <button class="btn ghost" type="button" data-close>ยกเลิก</button>
+      <button class="btn pri" type="submit" id="kmBtn">บันทึก</button>
+    </div>
+  </form>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- พื้นที่พิมพ์ -->
+<div id="print"></div>
+
+<script>
+/* ======================= ตั้งค่า ======================= */
+const API_URL = 'วาง_URL_ของ_Web_App_ที่นี่'; // เช่น https://script.google.com/macros/s/xxxx/exec
+
+/* ======================= ข้อมูล ======================= */
+const VEH = { van:{name:'รถตู้', plate:'ฮล 7503 กทม.'}, moto:{name:'รถจักรยานยนต์', plate:'จวษ 340 ชลบุรี'} };
+const MS = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+const ML = ['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
+const LS_KEY = 'carbook_cache_v1';
+let bookings = [];
+let lastBooked = null;
+let viewMonth = (() => { const d = new Date(); return { y:d.getFullYear(), m:d.getMonth() }; })();
+let carFilter = '';
+
+const $ = s => document.querySelector(s);
+const $$ = s => [...document.querySelectorAll(s)];
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const pad = n => String(n).padStart(2,'0');
+const isoToday = () => { const d = new Date(); return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate()); };
+const nowKey = () => { const d = new Date(); return isoToday()+'T'+pad(d.getHours())+':'+pad(d.getMinutes()); };
+const thShort = iso => { const [y,m,d] = iso.split('-').map(Number); return d+' '+MS[m-1]+' '+(y+543); };
+const thTime = t => t ? t.replace(':','.') : '';
+const startKey = b => b.departDate+'T'+b.departTime;
+const endKey = b => b.returnDate+'T'+b.returnTime;
+const hasKm = b => String(b.kmEnd ?? '') !== '';
+
+function toast(msg){ const t = $('#toast'); t.textContent = msg; t.classList.add('on'); clearTimeout(toast.t); toast.t = setTimeout(()=>t.classList.remove('on'), 2800); }
+
+/* ======================= โหลดข้อมูล (แคชในเครื่องก่อน แล้วค่อยอัปเดต) ======================= */
+function saveLocal(){ try{ localStorage.setItem(LS_KEY, JSON.stringify(bookings)); }catch(e){} }
+function loadLocal(){ try{ const s = localStorage.getItem(LS_KEY); if(s) bookings = JSON.parse(s) || []; }catch(e){} }
+
+async function refresh(){
+  if (!/^https:\/\//.test(API_URL)) { showLoading(false); toast('ยังไม่ได้ตั้งค่า API_URL ในไฟล์ index.html'); return; }
+  showLoading(true);
+  try{
+    const r = await fetch(API_URL, { cache:'no-store' });
+    const j = await r.json();
+    if (j.ok) { bookings = j.bookings || []; saveLocal(); renderAll(); }
+  }catch(e){ toast('โหลดข้อมูลล่าสุดไม่สำเร็จ แสดงข้อมูลที่บันทึกไว้ในเครื่อง'); }
+  showLoading(false);
+}
+function showLoading(on){ $('#loadLine').hidden = !on; $('#loadLine2').hidden = !on; }
+
+async function api(action, data){
+  const r = await fetch(API_URL, { method:'POST', body: JSON.stringify({ action, data }) }); // text/plain: ไม่ต้อง preflight
+  return r.json();
+}
+
+/* ======================= แท็บ ======================= */
+$$('.tab').forEach(b => b.addEventListener('click', () => {
+  $$('.tab').forEach(x => x.classList.toggle('on', x === b));
+  $$('.view').forEach(v => v.hidden = v.id !== 'v-'+b.dataset.view);
+  window.scrollTo({top:0, behavior:'smooth'});
+}));
+
+/* ======================= ฟอร์มจอง ======================= */
+const form = $('#bookForm');
+form.departDate.min = isoToday();
+form.departDate.addEventListener('change', () => {
+  form.returnDate.min = form.departDate.value;
+  if (!form.returnDate.value || form.returnDate.value < form.departDate.value) form.returnDate.value = form.departDate.value;
+  liveCheck();
+});
+['departTime','returnDate','returnTime'].forEach(n => form[n].addEventListener('change', liveCheck));
+$$('input[name=vehicle]').forEach(r => r.addEventListener('change', liveCheck));
+form.addEventListener('input', e => e.target.classList.remove('err'));
+
+function formData(){
+  const o = {}; ['name','position','dept','place','purpose','project','people','departDate','departTime','returnDate','returnTime','note'].forEach(k => o[k] = form[k].value.trim());
+  o.vehicle = (form.querySelector('input[name=vehicle]:checked') || {}).value || '';
+  return o;
+}
+function findClash(d){
+  if (!d.vehicle || !d.departDate || !d.departTime || !d.returnDate || !d.returnTime) return null;
+  const s = d.departDate+'T'+d.departTime, e = d.returnDate+'T'+d.returnTime;
+  return bookings.find(b => b.vehicle === d.vehicle && s < endKey(b) && startKey(b) < e) || null;
+}
+function clashMsg(b){ return `${VEH[b.vehicle].name} ${VEH[b.vehicle].plate} ถูกจองแล้วโดย ${b.name} ช่วง ${thShort(b.departDate)} ${thTime(b.departTime)} น. – ${thShort(b.returnDate)} ${thTime(b.returnTime)} น. กรุณาเลือกเวลาอื่นหรือรถคันอื่น`; }
+function showErr(msg){ const e = $('#formErr'); e.textContent = msg || ''; e.hidden = !msg; }
+function liveCheck(){
+  const d = formData(); const c = findClash(d);
+  if (c) showErr(clashMsg(c));
+  else if (d.departDate && d.departTime && d.returnDate && d.returnTime && (d.returnDate+'T'+d.returnTime) <= (d.departDate+'T'+d.departTime)) showErr('วันเวลากลับต้องหลังวันเวลาออกเดินทาง');
+  else showErr('');
+}
+
+form.addEventListener('submit', async e => {
+  e.preventDefault();
+  const d = formData();
+  const need = ['name','position','dept','place','purpose','people','departDate','departTime','returnDate','returnTime'];
+  const miss = need.filter(k => !d[k]);
+  miss.forEach(k => form[k].classList.add('err'));
+  if (!d.vehicle) { showErr('กรุณาเลือกรถที่ใช้'); return; }
+  if (miss.length) { showErr('กรุณากรอกช่องที่มีเครื่องหมาย * ให้ครบ'); form[miss[0]].focus(); return; }
+  if (!(parseInt(d.people,10) > 0)) { form.people.classList.add('err'); showErr('จำนวนคนต้องมากกว่า 0'); return; }
+  if ((d.returnDate+'T'+d.returnTime) <= (d.departDate+'T'+d.departTime)) { showErr('วันเวลากลับต้องหลังวันเวลาออกเดินทาง'); return; }
+  const c = findClash(d); if (c) { showErr(clashMsg(c)); return; }
+  showErr('');
+
+  const btn = $('#submitBtn'); btn.disabled = true; btn.innerHTML = '<span class="spin"></span>กำลังบันทึก…';
+  try{
+    const j = await api('create', d);
+    if (!j.ok) { showErr(j.error || 'บันทึกไม่สำเร็จ'); if (j.conflict) refresh(); return; }
+    bookings.push(j.booking); saveLocal(); renderAll();
+    lastBooked = j.booking;
+    $('#doneText').textContent = `${VEH[d.vehicle].name} ${VEH[d.vehicle].plate} · ${thShort(d.departDate)} ${thTime(d.departTime)} น. – ${thShort(d.returnDate)} ${thTime(d.returnTime)} น.`;
+    openModal('#mDone');
+    const keep = { name:d.name, position:d.position, dept:d.dept };
+    form.reset(); Object.entries(keep).forEach(([k,v]) => form[k].value = v); // จำชื่อผู้ขอไว้ให้ครั้งถัดไป
+  }catch(err){ showErr('เชื่อมต่อระบบไม่สำเร็จ กรุณาลองใหม่'); }
+  finally{ btn.disabled = false; btn.textContent = 'ยืนยันการจองรถ'; }
+});
+$('#donePrint').addEventListener('click', () => { closeModals(); printForm(lastBooked); });
+
+/* ======================= รายการจอง ======================= */
+$('#mPrev').onclick = () => { viewMonth.m--; if (viewMonth.m < 0) { viewMonth.m = 11; viewMonth.y--; } renderList(); };
+$('#mNext').onclick = () => { viewMonth.m++; if (viewMonth.m > 11) { viewMonth.m = 0; viewMonth.y++; } renderList(); };
+$$('#carFilter button').forEach(b => b.onclick = () => { carFilter = b.dataset.v; $$('#carFilter button').forEach(x => x.classList.toggle('on', x === b)); renderList(); });
+
+function itemHTML(b, mode){
+  const [y,m,d] = b.departDate.split('-').map(Number);
+  const range = b.departDate === b.returnDate
+    ? `${thShort(b.departDate)} · ${thTime(b.departTime)}–${thTime(b.returnTime)} น.`
+    : `${thShort(b.departDate)} ${thTime(b.departTime)} น. – ${thShort(b.returnDate)} ${thTime(b.returnTime)} น.`;
+  const km = hasKm(b) ? `<span class="chip ok">ระยะทาง ${Number(b.kmTotal).toLocaleString('th-TH')} กม.</span>`
+                      : (endKey(b) <= nowKey() ? '<span class="chip warn">รอบันทึกเลขไมล์</span>' : '');
+  const act = mode === 'driver'
+    ? `<button class="btn pri sm" data-km="${esc(b.id)}">บันทึกเลขไมล์</button>`
+    : `<button class="btn ghost sm" data-print="${esc(b.id)}">พิมพ์ใบขอ</button>`;
+  return `<div class="item">
+    <div class="datebox"><b>${d}</b><small>${MS[m-1]} ${String(y+543).slice(2)}</small></div>
+    <div><div class="t">${esc(b.place)}</div>
+      <div class="m">${esc(b.name)} · ${range}</div>
+      <div class="chips"><span class="chip ${b.vehicle}">${VEH[b.vehicle]?.name || ''} ${VEH[b.vehicle]?.plate || ''}</span><span class="chip">${esc(b.people)} คน</span>${km}</div></div>
+    <div class="act">${act}</div></div>`;
+}
+function renderList(){
+  $('#mLabel').textContent = ML[viewMonth.m]+' '+(viewMonth.y+543);
+  const pref = viewMonth.y+'-'+pad(viewMonth.m+1);
+  const rows = bookings.filter(b => (b.departDate.startsWith(pref) || b.returnDate.startsWith(pref) || (b.departDate < pref && b.returnDate > pref)) && (!carFilter || b.vehicle === carFilter))
+    .sort((a,b) => startKey(a) < startKey(b) ? -1 : 1);
+  $('#listBox').innerHTML = rows.length ? rows.map(b => itemHTML(b,'list')).join('') : '<div class="empty">ไม่มีการจองในเดือนนี้</div>';
+}
+function renderDriver(){
+  const now = nowKey();
+  const rows = bookings.filter(b => !hasKm(b) && startKey(b) <= now).sort((a,b) => startKey(a) < startKey(b) ? 1 : -1);
+  $('#pendingN').textContent = rows.length || '';
+  $('#driverBox').innerHTML = rows.length ? rows.map(b => itemHTML(b,'driver')).join('') : '<div class="empty">ไม่มีรายการที่รอบันทึกเลขไมล์ 🎉</div>';
+}
+function renderAll(){ renderList(); renderDriver(); }
+
+document.addEventListener('click', e => {
+  const p = e.target.closest('[data-print]'); if (p) printForm(bookings.find(b => b.id === p.dataset.print));
+  const k = e.target.closest('[data-km]'); if (k) openKm(bookings.find(b => b.id === k.dataset.km));
+  if (e.target.closest('[data-close]') || e.target.classList.contains('modal')) closeModals();
+});
+
+/* ======================= บันทึกเลขไมล์ ======================= */
+let kmTarget = null;
+const kmForm = $('#kmForm');
+function openKm(b){
+  if (!b) return; kmTarget = b; kmForm.reset(); $('#kmErr').hidden = true; $('#kmTotal').textContent = '– กม.';
+  $('#kmText').textContent = `${VEH[b.vehicle].name} ${VEH[b.vehicle].plate} · ${b.place} · ${thShort(b.departDate)}`;
+  openModal('#mKm'); setTimeout(() => kmForm.kmStart.focus(), 50);
+}
+kmForm.addEventListener('input', () => {
+  const s = kmForm.kmStart.value, en = kmForm.kmEnd.value;
+  $('#kmTotal').textContent = (s !== '' && en !== '' && Number(en) >= Number(s)) ? (Number(en)-Number(s)).toLocaleString('th-TH')+' กม.' : '– กม.';
+});
+kmForm.addEventListener('submit', async e => {
+  e.preventDefault();
+  const s = kmForm.kmStart.value, en = kmForm.kmEnd.value, err = $('#kmErr');
+  if (s === '' || en === '') { err.textContent = 'กรุณากรอกเลขกิโลเมตรทั้ง 2 ช่อง'; err.hidden = false; return; }
+  if (Number(en) < Number(s)) { err.textContent = 'เลขกิโลเมตรเมื่อกลับต้องไม่น้อยกว่าก่อนไป'; err.hidden = false; return; }
+  const btn = $('#kmBtn'); btn.disabled = true; btn.innerHTML = '<span class="spin"></span>กำลังบันทึก…';
+  try{
+    const j = await api('mileage', { id: kmTarget.id, kmStart: s, kmEnd: en });
+    if (!j.ok) { err.textContent = j.error || 'บันทึกไม่สำเร็จ'; err.hidden = false; return; }
+    Object.assign(kmTarget, { kmStart:j.kmStart, kmEnd:j.kmEnd, kmTotal:j.kmTotal, kmAt:j.kmAt });
+    saveLocal(); renderAll(); closeModals(); toast('บันทึกเลขไมล์เรียบร้อย');
+  }catch(x){ err.textContent = 'เชื่อมต่อระบบไม่สำเร็จ กรุณาลองใหม่'; err.hidden = false; }
+  finally{ btn.disabled = false; btn.textContent = 'บันทึก'; }
+});
+
+function openModal(id){ $(id).classList.add('on'); }
+function closeModals(){ $$('.modal').forEach(m => m.classList.remove('on')); }
+
+/* ======================= พิมพ์ใบขออนุญาต (ข้อมูลวางทับแบบฟอร์มต้นฉบับ หน่วย pt) ======================= */
+function printForm(b){
+  if (!b) return;
+  const [ry,rm,rd] = (b.requestDate || isoToday()).split('-').map(Number);
+  const v = (x, y, text, cls='') => text === '' || text == null ? '' : `<div class="v ${cls}" style="left:${x}pt;top:${y}pt">${esc(text)}</div>`;
+  const km = hasKm(b);
+  const fmt = n => Number(n).toLocaleString('th-TH');
+  let h = `<div class="page"><img src="form.png" alt="">`;
+  h += v(367,  81, rd, 'c');                       // วันที่
+  h += v(442,  81, ML[rm-1], 'c');                 // เดือน
+  h += v(518,  81, ry+543, 'c');                   // พ.ศ.
+  h += v(110, 123, b.name);                        // ข้าพเจ้า
+  h += v(345, 123, b.position);                    // ตำแหน่ง
+  h += v(118, 141, b.dept);                        // ฝ่าย/กลุ่ม
+  h += v(214, 159, b.place);                       // สถานที่
+  h += v( 93, 177, b.purpose.replace(/\s*\n\s*/g,' ')); // เพื่อ
+  h += v(242, 195, b.project);                     // งบประมาณโครงการ
+  h += v(165, 213, b.people, 'c');                 // จำนวนคน
+  h += v(335, 213, thShort(b.departDate), 'c');    // ออกเดินทางวันที่
+  h += v(476, 213, thTime(b.departTime), 'c');     // ตั้งแต่เวลา
+  h += v(331, 231, thShort(b.returnDate), 'c');    // กลับถึงวันที่
+  h += v(469, 231, thTime(b.returnTime), 'c');     // เวลา
+  h += v(117, 249, b.note);                        // หมายเหตุ
+  h += v(378, 303, b.name, 'c');                   // (ชื่อผู้ขออนุญาต)
+  h += `<div class="tick" style="left:109.5pt;top:${b.vehicle==='van'?344.5:362.5}pt">✓</div>`; // ช่องรถที่ใช้
+  if (km) {
+    h += v(165, 628, fmt(b.kmStart), 'c sm');      // เลขกิโลเมตรก่อนไป
+    h += v(165, 644, fmt(b.kmEnd), 'c sm');        // เลขกิโลเมตรเมื่อกลับ
+    h += v(151, 660, fmt(b.kmTotal)+' กม.', 'c sm'); // รวมระยะทาง
+  }
+  h += `</div>`;
+  const box = $('#print'); box.innerHTML = h;
+  const img = box.querySelector('img');
+  const go = () => setTimeout(() => window.print(), 80);
+  (document.fonts ? document.fonts.ready : Promise.resolve()).then(() => img.complete ? go() : (img.onload = go));
+}
+
+/* ======================= เริ่มต้น ======================= */
+loadLocal(); renderAll(); refresh();
+</script>
+</body>
+</html>
