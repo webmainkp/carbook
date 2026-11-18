@@ -222,7 +222,7 @@
     body > *:not(#print){display:none !important}
     #print{display:block}
   }
-  .page{position:relative;width:612pt;height:792pt;overflow:hidden;font-family:"Sarabun","Loma",sans-serif;color:#0b2a8f}
+  .page{position:relative;width:612pt;height:792pt;overflow:hidden;font-family:"Sarabun","Loma",sans-serif;color:#000}
   .page img{position:absolute;inset:0;width:100%;height:100%}
   .page .v{position:absolute;font-size:11.5pt;line-height:1;white-space:nowrap}
   .page .v.c{transform:translateX(-50%)}
@@ -231,7 +231,18 @@
   .page .wipe{position:absolute;background:#fff}
   .page .cbox{position:absolute;width:10.7pt;height:10.7pt;border:1pt solid #000;background:#fff}
   .page .cbox.no::after{content:none}
-  .page .cbox::after{content:"✓";position:absolute;left:1pt;top:-3.5pt;font-size:12pt;color:#0b2a8f;font-family:"DejaVu Sans","Segoe UI Symbol",sans-serif}
+  @page report{size:A4 landscape;margin:12mm 10mm}
+  .rpt{page:report;font-family:var(--rf);font-size:var(--rs);color:#000;line-height:1.2}
+  .rpt + .rpt{break-before:page}
+  .rpt h2,.rpt h3{text-align:center;margin:0;font-size:var(--rs);font-weight:700}
+  .rpt .per{text-align:center;margin:0 0 6pt}
+  .rpt table{width:100%;border-collapse:collapse;table-layout:fixed}
+  .rpt th,.rpt td{border:.75pt solid #000;padding:1pt 3pt;vertical-align:top;word-wrap:break-word}
+  .rpt th{font-weight:700;text-align:center;vertical-align:middle}
+  .rpt td.c{text-align:center;white-space:nowrap}.rpt td.r{text-align:right;white-space:nowrap}
+  .rpt thead{display:table-header-group}
+  .rpt tr{break-inside:avoid}
+  .page .cbox::after{content:"✓";position:absolute;left:1pt;top:-3.5pt;font-size:12pt;color:#000;font-family:"DejaVu Sans","Segoe UI Symbol",sans-serif}
   .page .dots{position:absolute;border-bottom:1.2pt dotted #000;height:0}
 </style>
 </head>
@@ -353,6 +364,29 @@
 
   <!-- ===== บันทึกเลขไมล์ ===== -->
   <section class="view" id="v-driver" hidden>
+    <div class="card" style="margin-bottom:14px">
+      <h2 class="sec-title" style="margin:0 0 12px">พิมพ์บันทึกการใช้รถราชการ</h2>
+      <form id="rptForm" novalidate>
+        <div class="grid">
+          <label class="f"><span>รถ</span><select class="i" name="car" id="rptCar"></select></label>
+          <label class="f"><span>ช่วงเวลา</span><select class="i" name="mode">
+            <option value="month">รายเดือน</option><option value="fy">ปีงบประมาณ</option><option value="custom">กำหนดวันเอง</option></select></label>
+        </div>
+        <div class="grid" style="margin-top:12px" data-m="month">
+          <label class="f"><span>เดือน</span><select class="i" name="month"></select></label>
+          <label class="f"><span>ปี (พ.ศ.)</span><select class="i" name="year"></select></label>
+        </div>
+        <div class="grid" style="margin-top:12px" data-m="fy" hidden>
+          <label class="f"><span>ปีงบประมาณ (พ.ศ.)</span><select class="i" name="fy"></select></label>
+        </div>
+        <div class="grid" style="margin-top:12px" data-m="custom" hidden>
+          <label class="f"><span>ตั้งแต่วันที่</span><input class="i" type="date" name="from"></label>
+          <label class="f"><span>ถึงวันที่</span><input class="i" type="date" name="to"></label>
+        </div>
+        <div class="alert bad" id="rptErr" hidden></div>
+        <div class="actions" style="margin-top:14px"><button class="btn pri">พิมพ์บันทึกการใช้รถ</button></div>
+      </form>
+    </div>
     <div class="card" style="margin-bottom:14px">
       <h2 class="sec-title" style="margin:0 0 4px">บันทึกของพนักงานขับรถ</h2>
       <div style="color:var(--muted);font-size:14px">กรอกเลขกิโลเมตรหลังใช้รถเสร็จ เลือกรายการที่ต้องการบันทึก</div>
@@ -614,7 +648,7 @@ function renderAll(){
   $('#tabDriver').hidden = !canKm(); $('#tabAdmin').hidden = !isAdmin();
   const cur = $$('.tab').find(t => t.classList.contains('on'));
   if (cur && cur.hidden) switchTab('list');
-  renderBookForm(); renderList(); renderDriver(); if (isAdmin()) renderAdmin();
+  renderBookForm(); renderList(); renderDriver(); renderRptCars(); if (isAdmin()) renderAdmin();
 }
 
 function renderBookForm(){
@@ -1007,6 +1041,70 @@ function printForm(b){
   const go = () => { box.style.display = 'block'; fit(); box.style.display = ''; setTimeout(() => window.print(), 80); };
   (document.fonts ? document.fonts.ready : Promise.resolve()).then(() => img.complete ? go() : (img.onload = go));
 }
+
+/* ======================= พิมพ์บันทึกการใช้รถราชการ (A4 แนวนอน) ======================= */
+const rptForm = $('#rptForm');
+(function initRpt(){
+  const now = new Date(), y = now.getFullYear(), m = now.getMonth();
+  rptForm.month.innerHTML = ML.map((n,i) => `<option value="${i}"${i===m?' selected':''}>${n}</option>`).join('');
+  const years = []; for (let k = y + 1; k >= y - 4; k--) years.push(k);
+  rptForm.year.innerHTML = years.map(k => `<option value="${k}"${k===y?' selected':''}>${k+543}</option>`).join('');
+  const curFy = m >= 9 ? y + 1 : y; // ปีงบประมาณเริ่ม 1 ต.ค.
+  rptForm.fy.innerHTML = years.map(k => `<option value="${k}"${k===curFy?' selected':''}>${k+543}</option>`).join('');
+})();
+rptForm.mode.addEventListener('change', () => $$('#rptForm [data-m]').forEach(el => el.hidden = el.dataset.m !== rptForm.mode.value));
+function renderRptCars(){
+  const keep = rptForm.car.value, cars = D.vehicles.filter(v => v.active || D.bookings.some(b => b.vehicle === v.id));
+  rptForm.car.innerHTML = '<option value="">ทุกคัน (แยกหน้าละคัน)</option>' + cars.map(v => `<option value="${esc(v.id)}">${esc(v.type)} ${esc(v.plate)}${v.active?'':' (เลิกใช้แล้ว)'}</option>`).join('');
+  if ([...rptForm.car.options].some(o => o.value === keep)) rptForm.car.value = keep;
+}
+// ใช้ TH SarabunPSK / TH Sarabun New ที่ติดตั้งในเครื่อง ถ้าไม่มีใช้ Sarabun (หน้าตาเดียวกัน ตัวใหญ่กว่า จึงลดขนาดให้เท่ากัน)
+function thSarabun(){
+  const c = document.createElement('canvas').getContext('2d'), t = 'กขคงจ ทดสอบ 0123456789';
+  c.font = '40px monospace'; const base = c.measureText(t).width;
+  for (const f of ['TH SarabunPSK','TH Sarabun New','TH Sarabun PSK']) { c.font = `40px "${f}", monospace`; if (c.measureText(t).width !== base) return { fam:`"${f}"`, size:'16pt' }; }
+  return { fam:'"Sarabun","Loma",sans-serif', size:'11.5pt' };
+}
+const dmy = iso => { const [y,m,d] = String(iso).split('-').map(Number); return d+'/'+m+'/'+(y+543); };
+const kmFmt = v => v === '' || v == null ? '' : Number(v).toLocaleString('th-TH', { maximumFractionDigits:1 });
+rptForm.addEventListener('submit', e => {
+  e.preventDefault();
+  const f = rptForm; let from, to, per;
+  if (f.mode.value === 'month') {
+    const y = +f.year.value, m = +f.month.value;
+    from = y+'-'+pad(m+1)+'-01'; to = y+'-'+pad(m+1)+'-'+pad(new Date(y, m+1, 0).getDate()); per = `ประจำเดือน${ML[m]} พ.ศ. ${y+543}`;
+  } else if (f.mode.value === 'fy') {
+    const y = +f.fy.value; from = (y-1)+'-10-01'; to = y+'-09-30'; per = `ประจำปีงบประมาณ พ.ศ. ${y+543} (1 ตุลาคม ${y+542} – 30 กันยายน ${y+543})`;
+  } else {
+    from = f.from.value; to = f.to.value;
+    if (!from || !to) { showAlert('#rptErr','กรุณาเลือกวันที่ให้ครบ'); return; }
+    if (to < from) { showAlert('#rptErr','วันที่สิ้นสุดต้องไม่ก่อนวันที่เริ่ม'); return; }
+    per = `ระหว่างวันที่ ${thShort(from)} – ${thShort(to)}`;
+  }
+  showAlert('#rptErr','');
+  const cars = f.car.value ? D.vehicles.filter(v => v.id === f.car.value) : D.vehicles.filter(v => v.active || D.bookings.some(b => b.vehicle === v.id && b.departDate >= from && b.departDate <= to));
+  const font = thSarabun();
+  const W = [8,20,10,30,26,15,20,10,17,12,24,28], tw = W.reduce((a,b) => a+b, 0);
+  const col = W.map(w => `<col style="width:${(w/tw*100).toFixed(2)}%">`).join('');
+  let html = '';
+  cars.forEach(v => {
+    const rows = D.bookings.filter(b => b.vehicle === v.id && !isCancelled(b) && b.departDate >= from && b.departDate <= to).sort((a,b) => startKey(a) < startKey(b) ? -1 : 1);
+    const type = /^รถ/.test(v.type) ? v.type : 'รถ' + v.type;
+    html += `<section class="rpt"><h2>บันทึกการใช้รถราชการ (${esc(type)})</h2><h3>หมายเลขทะเบียน ${esc(v.plate)}</h3><div class="per">${esc(per)}</div>
+      <table><colgroup>${col}</colgroup><thead>
+        <tr><th rowspan="2">ลำดับที่</th><th colspan="2">ออกเดินทาง</th><th rowspan="2">ผู้ขออนุญาตใช้รถ</th><th rowspan="2">จุดปลายทาง</th><th rowspan="2">เลขไมล์ก่อนเดินทาง</th>
+            <th colspan="2">กลับถึงสำนักงาน</th><th rowspan="2">เลขไมล์เมื่อกลับถึงสำนักงาน</th><th rowspan="2">รวมระยะทาง</th><th rowspan="2">ผู้ขับรถ</th><th rowspan="2">หมายเหตุ</th></tr>
+        <tr><th>วันที่</th><th>เวลา</th><th>วันที่</th><th>เวลา</th></tr></thead><tbody>` +
+      (rows.length ? rows.map((b,i) => `<tr><td class="c">${i+1}</td><td class="c">${dmy(b.departDate)}</td><td class="c">${thTime(b.departTime)}</td><td>${esc(b.name)}</td><td>${esc(b.place)}</td>
+        <td class="r">${kmFmt(b.kmStart)}</td><td class="c">${dmy(b.returnDate)}</td><td class="c">${thTime(b.returnTime)}</td><td class="r">${kmFmt(b.kmEnd)}</td>
+        <td class="r">${kmFmt(b.kmTotal)}</td><td>${esc(b.driverName || '')}</td><td>${esc(b.note || '')}</td></tr>`).join('')
+        : '<tr><td colspan="12" class="c">ไม่มีการใช้รถในช่วงเวลานี้</td></tr>') + '</tbody></table></section>';
+  });
+  if (!cars.length) { showAlert('#rptErr','ไม่พบรถในระบบ'); return; }
+  const box = $('#print'); box.innerHTML = html;
+  box.querySelectorAll('.rpt').forEach(r => { r.style.setProperty('--rf', font.fam); r.style.setProperty('--rs', font.size); });
+  (document.fonts ? document.fonts.ready : Promise.resolve()).then(() => setTimeout(() => window.print(), 80));
+});
 
 /* ======================= เริ่มต้น ======================= */
 (function start(){
